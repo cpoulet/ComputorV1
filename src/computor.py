@@ -30,18 +30,19 @@ class PolynomeSolveur:
         ('MULT' , r'\*'),
         ('POW' , r'\^'),
         ('EGA' , r'\='),
-        ('VAR' , r'X'),
+        ('VAR' , r'[Xx]'),
         ('WS' , r'\s'),
-        ('ERROR' , r'[^0-9X\s+-^*=]')]
+        ('ERROR' , r'[^0-9Xx\s+-^*=]')]
 
     def parse(self, equa):
         self.token_generator = tokenize(equa, self.TOKENS_SPEC)
         self.current_token = None
         self.next_token = None
         self._next()
-        self._prob()
+        self._tab(self._prob())
         if self.next_token:
             raise Exception('Wrong token sequence busted. Processing stopped at : ' + self.next_token.value)
+        
 
     def _next(self):
         self.current_token, self.next_token = self.next_token, next(self.token_generator, None)
@@ -61,34 +62,52 @@ class PolynomeSolveur:
         '''
         <prob>      ::= <equa> '=' <equa>
         '''
-        self._equa()
+        prob_val = self._equa()
         self._expect('EGA')
-        self._equa()
+        equa_val = self._equa()
+        for k in equa_val:
+            if prob_val.get(k):
+                prob_val[k] -= equa_val[k]
+            else:
+                prob_val[k] = equa_val[k] * -1
+        return prob_val
 
     def _equa(self):
         '''
         <equa>      ::= <term> {('+' | '-') <term>}
         '''
-        self._term()
+        term_val = self._term()
+        equa_val = {term_val[1]:term_val[0]}
         while self._accept('PLUS') or self._accept('MINUS'):
-            self._term()
+            if self.current_token.type_ == 'MINUS':
+                term_val = self._term()
+                term_val = (term_val[0] * -1, term_val[1])
+            else:
+                term_val = self._term()
+            if equa_val.get(term_val[1]):
+                equa_val[term_val[1]] += term_val[0]
+            else:
+                equa_val[term_val[1]] = term_val[0]
+        return equa_val
 
     def _term(self):
         '''
         <term>      ::= <factor> {'*' <factor>}
         '''
-        self._factor()
-        if self._accept('MULT'):
-            self._factor()
+        term_val = self._factor()
+        while self._accept('MULT'):
+            term_add = self._factor()
+            term_val = (term_val[0]*term_add[0], term_val[1]+term_add[1])
+        return term_val
 
     def _factor(self):
         '''
         <factor>    ::= NB | <pow>
         '''
         if self._accept('NB'):
-            return
+            return (int(self.current_token.value), 0)
         else:
-            self._pow()
+            return (1, self._pow())
 
     def _pow(self):
         '''
@@ -97,15 +116,31 @@ class PolynomeSolveur:
         if self._accept('VAR'):
             if self._accept('POW'):
                 self._expect('NB')
-            return
+                return int(self.current_token.value)
+            return 1
         else:
-            raise Exception('Expected a VAR')
+            raise Exception('Expected a VAR or a NB')
+
+    def _tab(self, prob):
+        self.poly = []
+        i = 0
+        while len(prob):
+            if prob.get(i):
+                self.poly.append(prob[i])
+                del prob[i]
+            else:
+                self.poly.append(0)
+            i += 1
+
+    def small(self):
+        print('Sous forme reduite :', ' + '.join([str(x) + 'x^'+str(i) if i > 1 else str(x) + 'x' if i > 0 else str(x) for i, x in enumerate(self.poly) if x]))
 
 def main():
     PS = PolynomeSolveur()
     print('Entrez une equation : ', end='')
     equa = input().strip()
     PS.parse(equa)
+    PS.small()
 
 if __name__ == "__main__":
     try:

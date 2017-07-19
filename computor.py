@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 
 import re
+import math
 import collections
+from fractions import Fraction
 
 Token = collections.namedtuple('Token', ['type_', 'value'])
 
@@ -13,6 +15,15 @@ def tokenize(expr, tokens_spec):
             raise Exception('Very wrong token.')
         if not item.lastgroup == 'WS':
             yield Token(item.lastgroup, item.group())
+
+def ordi(nb):
+    suff = ['rd', 'st', 'nd']
+    if nb <= 0:
+        return str(nb)
+    if 0 < nb % 10 < 4 and nb not in [11, 12, 13]:
+        return str(nb) + suff[nb % 10 % 3]
+    else:
+        return str(nb) + 'th'
 
 class PolynomeSolveur:
     '''
@@ -125,22 +136,56 @@ class PolynomeSolveur:
         self.poly = []
         i = 0
         while len(prob):
-            if prob.get(i):
+            if prob.get(i) != None:
                 self.poly.append(prob[i])
                 del prob[i]
             else:
                 self.poly.append(0)
             i += 1
+        self._small()
 
-    def small(self):
-        print('Sous forme reduite :', ' + '.join([str(x) + 'x^'+str(i) if i > 1 else str(x) + 'x' if i > 0 else str(x) for i, x in enumerate(self.poly) if x]))
+    def _small(self):
+        self.degree = len(self.poly) - 1
+        if not self.degree:
+            raise Exception('This is not a valid equation.')
+        print('Reduce form :', ' + '.join([str(x) + 'x^' + str(i) if i > 1 else str(x) + 'x' if i == 1 else str(x) for i, x in enumerate(self.poly) if x]), '= 0')
+        print('This is a', ordi(self.degree), 'degree equation.')
+
+    def solve(self):
+        if self.degree == 1:
+            self._first_degree()
+        elif self.degree == 2:
+            self._second_degree()
+
+    def _first_degree(self):
+        print('X =', -1 * self.poly[0] / self.poly[1])
+
+    def _second_degree(self):
+        d = self._discriminant()
+        a = self.poly[2]
+        b = self.poly[1]
+        c = self.poly[0]
+        if d > 0:
+            print('Its discriminant is strictly positive, then there is two distinct real roots :')
+            print('{:.6f}'.format(-1 * b - math.sqrt(d), 2 * a))
+            print('{:.6f}'.format(-1 * b + math.sqrt(d), 2 * a))
+        elif d == 0:
+            print('Its discriminant is null, then there is exactly one real root :')
+            print(Fraction(-1 * b, 2 * a))
+        else:
+            print('Its discriminant is strictly negative, then there is two distinct complex roots:')
+            print(Fraction(-1 * b, 2 * a), '+ i * {:.6f}'.format((math.sqrt(d * -1)) / (2 * a)))
+            print(Fraction(-1 * b, 2 * a), '- i * {:.6f}'.format((math.sqrt(d * -1)) / (2 * a)))
+
+    def _discriminant(self):
+        return self.poly[1]**2 - 4*self.poly[0]*self.poly[2]
 
 def main():
     PS = PolynomeSolveur()
-    print('Entrez une equation : ', end='')
+    print('Enter an equation : ', end='')
     equa = input().strip()
     PS.parse(equa)
-    PS.small()
+    PS.solve()
 
 if __name__ == "__main__":
     try:

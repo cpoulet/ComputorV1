@@ -151,7 +151,7 @@ class PolynomeSolveur:
         self.degree = len(self.poly) - 1
         if not self.degree:
             raise Exception('This is not a valid equation.')
-        print('Reduce form :', ' + '.join([str(x) if x > 1 else '' + 'x^' + str(i) if i > 1 else str(x) if x > 1 else '' + 'x' if i == 1 else str(x) if x > 1 else '' for i, x in enumerate(self.poly) if x]), '= 0')
+        print('Reduce form :', ' + '.join([str(x) if x != 1 else '' + 'x^' + str(i) if i > 1 else str(x) if x != 1 else '' + 'x' if i == 1 else str(x) if x != 1 else '' for i, x in enumerate(self.poly) if x]), '= 0')
         print('This is a', ordi(self.degree), 'degree equation.')
 
     def solve(self):

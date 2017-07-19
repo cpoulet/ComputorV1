@@ -3,6 +3,7 @@
 import re
 import math
 import collections
+from time import sleep
 from fractions import Fraction
 
 Token = collections.namedtuple('Token', ['type_', 'value'])
@@ -142,13 +143,15 @@ class PolynomeSolveur:
             else:
                 self.poly.append(0)
             i += 1
+        while not self.poly[-1]:
+            self.poly.pop()
         self._small()
 
     def _small(self):
         self.degree = len(self.poly) - 1
         if not self.degree:
             raise Exception('This is not a valid equation.')
-        print('Reduce form :', ' + '.join([str(x) + 'x^' + str(i) if i > 1 else str(x) + 'x' if i == 1 else str(x) for i, x in enumerate(self.poly) if x]), '= 0')
+        print('Reduce form :', ' + '.join([str(x) if x > 1 else '' + 'x^' + str(i) if i > 1 else str(x) if x > 1 else '' + 'x' if i == 1 else str(x) if x > 1 else '' for i, x in enumerate(self.poly) if x]), '= 0')
         print('This is a', ordi(self.degree), 'degree equation.')
 
     def solve(self):
@@ -156,6 +159,10 @@ class PolynomeSolveur:
             self._first_degree()
         elif self.degree == 2:
             self._second_degree()
+        else:
+            print('The equation is to complex to be solve.')
+            sleep(1)
+            print('For the moment...')
 
     def _first_degree(self):
         print('X =', -1 * self.poly[0] / self.poly[1])

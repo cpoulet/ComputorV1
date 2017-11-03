@@ -28,7 +28,7 @@ class PolynomeSolveur:
     '''
     <prob>      ::= <equa> '=' <equa>
     <equa>      ::= <term> {('+' | '-') <term>}
-    <term>      ::= <factor> {'*' <factor>}
+    <term>      ::= <factor> {('*' <factor>)}
     <factor>    ::= NB | <pow>
     <pow>       ::= VAR {'^' NB}
     '''
@@ -103,10 +103,10 @@ class PolynomeSolveur:
 
     def _term(self):
         '''
-        <term>      ::= <factor> {'*' <factor>}
+        <term>      ::= <factor> {'*'? <factor>}
         '''
         term_val = self._factor()
-        while self._accept('MULT'):
+        while self._accept('MULT') or (self.next_token and self.next_token.type_ == 'VAR'):
             term_add = self._factor()
             term_val = (term_val[0]*term_add[0], term_val[1]+term_add[1])
         return term_val
@@ -122,11 +122,16 @@ class PolynomeSolveur:
 
     def _pow(self):
         '''
-        <pow>       ::= VAR {'^' NB}
+        <pow>       ::= VAR {'^'? NB}
         '''
         if self._accept('VAR'):
             if self._accept('POW'):
                 self._expect('NB')
+                if '.' in self.current_token.value:
+                    raise Exception('Power should be an integer')
+                p = int(self.current_token.value)
+                return p if p > 0 else -1
+            elif self._accept('NB'):
                 if '.' in self.current_token.value:
                     raise Exception('Power should be an integer')
                 p = int(self.current_token.value)

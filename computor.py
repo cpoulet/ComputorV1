@@ -135,44 +135,36 @@ class PolynomeSolveur:
         else:
             raise Exception('Expected a VAR or a NB')
 
-    def _procede(self, prob):
-        print(prob)
-        print(len(prob))
-        if 0 in prob:
-            print(prob[0])
-        if -1 in prob and len(prob) == 1:
-            self.degree =0
-            return False
-        if -1 in prob and len(prob) == 2 and 0 in prob:
-            if prob[0] == 1:
-                self.degree = 0
-                return False
-            else:
-                return {}
-        return prob
-
     def _tab(self, prob):
-        prob = self._procede(prob)
-        if not prob:
-            return
+        x0 = prob.pop(-1, None)
         self.poly = []
         i = 0
-        while len(prob):
-            if prob.get(i) != None:
-                self.poly.append(prob[i])
-                del prob[i]
-            else:
-                self.poly.append(0)
+        while(len(prob)):
+            val = self.poly.append(prob.pop(i, 0))
             i += 1
-        if len(self.poly) > 1:
-            while not self.poly[-1]:
+        while(len(self.poly)):
+            if not self.poly[-1]:
                 self.poly.pop()
-        self._small()
+            else:
+                break
+        if x0 != None:
+            if self.poly != []:
+                self.poly[0] += x0
+            elif x0:
+                self.poly.append(x0)
+        self._reduce()
 
-    def _small(self):
+    def _reduce(self):
+        if len(self.poly) == 1:
+            if self.poly[0] == 0:
+                self.degree = 0
+                return
+            else:
+                raise Exception('There is no solution to this expression.')
+        if self.poly == []:
+            self.degree = 0
+            return
         self.degree = len(self.poly) - 1
-        if not self.degree:
-            raise Exception('This is not an equation.')
         s = ''
         for i, x in enumerate(self.poly):
             s += ' - ' if x < 0 else ' + '

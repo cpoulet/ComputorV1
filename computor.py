@@ -3,8 +3,6 @@
 import re
 import math
 import collections
-from time import sleep
-from fractions import Fraction
 
 Token = collections.namedtuple('Token', ['type_', 'value'])
 
@@ -36,7 +34,7 @@ class PolynomeSolveur:
     '''
     def __init__(self):
         self.TOKENS_SPEC = [
-        ('NB' , r'[0-9]+'),
+        ('NB' , r'[0-9]+\.?[0-9]*'),
         ('MINUS' , r'\-'),
         ('PLUS' , r'\+'),
         ('MULT' , r'\*'),
@@ -51,9 +49,10 @@ class PolynomeSolveur:
         self.current_token = None
         self.next_token = None
         self._next()
-        self._tab(self._prob())
+        out = self._prob()
         if self.next_token:
             raise Exception('Wrong token sequence busted. Processing stopped at : ' + self.next_token.value)
+        self._tab(out)
         
 
     def _next(self):
@@ -117,7 +116,7 @@ class PolynomeSolveur:
         <factor>    ::= NB | <pow>
         '''
         if self._accept('NB'):
-            return (int(self.current_token.value), 0)
+            return (float(self.current_token.value), 0)
         else:
             return (1, self._pow())
 
@@ -128,12 +127,34 @@ class PolynomeSolveur:
         if self._accept('VAR'):
             if self._accept('POW'):
                 self._expect('NB')
-                return int(self.current_token.value)
+                if '.' in self.current_token.value:
+                    raise Exception('Power should be an integer')
+                p = int(self.current_token.value)
+                return p if p > 0 else -1
             return 1
         else:
             raise Exception('Expected a VAR or a NB')
 
+    def _procede(self, prob):
+        print(prob)
+        print(len(prob))
+        if 0 in prob:
+            print(prob[0])
+        if -1 in prob and len(prob) == 1:
+            self.degree =0
+            return False
+        if -1 in prob and len(prob) == 2 and 0 in prob:
+            if prob[0] == 1:
+                self.degree = 0
+                return False
+            else:
+                return {}
+        return prob
+
     def _tab(self, prob):
+        prob = self._procede(prob)
+        if not prob:
+            return
         self.poly = []
         i = 0
         while len(prob):
@@ -143,26 +164,34 @@ class PolynomeSolveur:
             else:
                 self.poly.append(0)
             i += 1
-        while not self.poly[-1]:
-            self.poly.pop()
+        if len(self.poly) > 1:
+            while not self.poly[-1]:
+                self.poly.pop()
         self._small()
 
     def _small(self):
         self.degree = len(self.poly) - 1
         if not self.degree:
-            raise Exception('This is not a valid equation.')
-        print('Reduce form :', ' + '.join([str(x) if x != 1 else '' + 'x^' + str(i) if i > 1 else str(x) if x != 1 else '' + 'x' if i == 1 else str(x) if x != 1 else '' for i, x in enumerate(self.poly) if x]), '= 0')
+            raise Exception('This is not an equation.')
+        s = ''
+        for i, x in enumerate(self.poly):
+            s += ' - ' if x < 0 else ' + '
+            if abs(x) != 1:
+                s += str(abs(x)) + ' * '
+            s += 'X^' + str(i)
+        s = s[3:] if s[1] == '+' else '-' + s[3:]
+        print('Reduce form : ' + s + ' = 0');
         print('This is a', ordi(self.degree), 'degree equation.')
 
     def solve(self):
-        if self.degree == 1:
+        if self.degree == 0:
+            print('All reals are solution to this equation..')
+        elif self.degree == 1:
             self._first_degree()
         elif self.degree == 2:
             self._second_degree()
         else:
             print('The equation is to complex to be solve.')
-            sleep(1)
-            print('For the moment...')
 
     def _first_degree(self):
         print('X =', -1 * self.poly[0] / self.poly[1])
@@ -174,25 +203,32 @@ class PolynomeSolveur:
         c = self.poly[0]
         if d > 0:
             print('Its discriminant is strictly positive, then there is two distinct real roots :')
-            print('{:.6f}'.format(-1 * b - math.sqrt(d), 2 * a))
-            print('{:.6f}'.format(-1 * b + math.sqrt(d), 2 * a))
+            print('{:.6f}'.format((-1 * b - math.sqrt(d)) / (2 * a)))
+            print('{:.6f}'.format((-1 * b + math.sqrt(d)) / (2 * a)))
         elif d == 0:
             print('Its discriminant is null, then there is exactly one real root :')
-            print(Fraction(-1 * b, 2 * a))
+            print((-1 * b) / (2 * a))
         else:
             print('Its discriminant is strictly negative, then there is two distinct complex roots:')
-            print(Fraction(-1 * b, 2 * a), '+ i * {:.6f}'.format((math.sqrt(d * -1)) / (2 * a)))
-            print(Fraction(-1 * b, 2 * a), '- i * {:.6f}'.format((math.sqrt(d * -1)) / (2 * a)))
+            print((-1 * b) / (2 * a), '+ i * {:.6f}'.format((math.sqrt(d * -1)) / (2 * a)))
+            print((-1 * b) / (2 * a), '- i * {:.6f}'.format((math.sqrt(d * -1)) / (2 * a)))
 
     def _discriminant(self):
         return self.poly[1]**2 - 4*self.poly[0]*self.poly[2]
 
 def main():
     PS = PolynomeSolveur()
-    print('Enter an equation : ', end='')
-    equa = input().strip()
-    PS.parse(equa)
-    PS.solve()
+    while(1):
+        print('Enter an equation : ', end='')
+        equa = input().strip()
+        if equa == 'Q':
+            exit()
+        try:
+            PS.parse(equa)
+            PS.solve()
+        except Exception as e:
+            print('Error : ' + str(e))
+            print('Write \'Q\' to exit the program')
 
 if __name__ == "__main__":
     try:

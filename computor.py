@@ -118,6 +118,9 @@ class PolynomeSolveur:
         '''
         if self._accept('NB'):
             return (float(self.current_token.value), 0)
+        elif self._accept('MINUS'):
+            self._expect('NB')
+            return (float(self.current_token.value) * -1, 0)
         else:
             return (1, self._pow())
 
@@ -166,7 +169,8 @@ class PolynomeSolveur:
                 self.degree = 0
                 return
             else:
-                raise Exception('There is no solution to this expression.')
+                self.degree = -1
+                return
         if self.poly == []:
             self.degree = 0
             return
@@ -189,6 +193,8 @@ class PolynomeSolveur:
         print('This is a', Color().red(ordi(self.degree)), 'degree equation.')
 
     def solve(self):
+        if self.degree == -1:
+            print(Color().red('There is no solution to this expression.'))
         if self.degree == 0:
             print(Color().green('All reals are solution to this equation..'))
         elif self.degree == 1:

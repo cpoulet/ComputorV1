@@ -3,6 +3,7 @@
 import re
 import math
 import collections
+from color import Color
 
 Token = collections.namedtuple('Token', ['type_', 'value'])
 
@@ -170,28 +171,35 @@ class PolynomeSolveur:
             self.degree = 0
             return
         self.degree = len(self.poly) - 1
-        s = ''
+        s1 = ''
+        s2 = ''
         for i, x in enumerate(self.poly):
-            s += ' - ' if x < 0 else ' + '
-            if abs(x) != 1:
-                s += str(abs(x)) + ' * '
-            s += 'X^' + str(i)
-        s = s[3:] if s[1] == '+' else '-' + s[3:]
-        print('Reduce form : ' + s + ' = 0');
-        print('This is a', ordi(self.degree), 'degree equation.')
+            s1 += ' - ' if x < 0 else ' + '
+            if x != 0:
+                s2 += ' - ' if x < 0  else ' + '
+            s1 += str(abs(x)) + ' * ' if abs(x) != 1 else ''
+            s2 += '{:g}'.format(abs(x)) if x not in [0,1] else ''
+            s1 += 'X^' + str(i)
+            if i:
+                s2 += 'x' + (str(i) if i != 1 else '')
+        s1 = s1[3:] if s1[1] == '+' else '-' + s1[3:]
+        s2 = s2[3:] if s2[1] == '+' else '-' + s2[3:]
+        print('Reduce form : ' + s1 + ' = 0');
+        print('Reduce form : ' + s2 + ' = 0');
+        print('This is a', Color().red(ordi(self.degree)), 'degree equation.')
 
     def solve(self):
         if self.degree == 0:
-            print('All reals are solution to this equation..')
+            print(Color().green('All reals are solution to this equation..'))
         elif self.degree == 1:
             self._first_degree()
         elif self.degree == 2:
             self._second_degree()
         else:
-            print('The equation is to complex to be solve.')
+            print(Color().red('The equation is to complex to be solve.'))
 
     def _first_degree(self):
-        print('X =', -1 * self.poly[0] / self.poly[1])
+        print(Color().green('X = ' + str(-1 * self.poly[0] / self.poly[1])))
 
     def _second_degree(self):
         d = self._discriminant()
@@ -200,23 +208,23 @@ class PolynomeSolveur:
         c = self.poly[0]
         if d > 0:
             print('Its discriminant is strictly positive, then there is two distinct real roots :')
-            print('{:.6f}'.format((-1 * b - math.sqrt(d)) / (2 * a)))
-            print('{:.6f}'.format((-1 * b + math.sqrt(d)) / (2 * a)))
+            print(Color().green('X1 = {:g}'.format((-1 * b - math.sqrt(d)) / (2 * a))))
+            print(Color().green('X2 = {:g}'.format((-1 * b + math.sqrt(d)) / (2 * a))))
         elif d == 0:
             print('Its discriminant is null, then there is exactly one real root :')
-            print((-1 * b) / (2 * a))
+            print(Color().green('X = ' + str((-1 * b) / (2 * a))))
         else:
             print('Its discriminant is strictly negative, then there is two distinct complex roots:')
-            print((-1 * b) / (2 * a), '+ i * {:.6f}'.format((math.sqrt(d * -1)) / (2 * a)))
-            print((-1 * b) / (2 * a), '- i * {:.6f}'.format((math.sqrt(d * -1)) / (2 * a)))
+            print(Color().green('X1 = ' + str((-1 * b) / (2 * a)) + ' + i * {:g}'.format((math.sqrt(d * -1)) / (2 * a))))
+            print(Color().green('X2 = ' + str((-1 * b) / (2 * a)) + ' - i * {:g}'.format((math.sqrt(d * -1)) / (2 * a))))
 
     def _discriminant(self):
-        return self.poly[1]**2 - 4*self.poly[0]*self.poly[2]
+        return self.poly[1]**2 - 4 * self.poly[0] * self.poly[2]
 
 def main():
     PS = PolynomeSolveur()
     while(1):
-        print('Enter an equation : ', end='')
+        print(Color().white('> Enter an equation : '), end='')
         equa = input().strip()
         if equa == 'Q':
             exit()
